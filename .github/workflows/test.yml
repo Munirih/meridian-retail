@@ -1,0 +1,100 @@
+name: Test Services
+
+on:
+  push:
+    branches: 
+      - main
+  pull_request: 
+    branches: 
+      - main 
+
+
+jobs:
+
+  # -------------------------------------------
+  # Job 1: Test Auth Service
+  # -------------------------------------------
+  test-auth:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: auth-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install dependendies
+        run: |
+          python -m install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run test
+        run: pytest
+
+  # -------------------------------------------
+  # Job 2: Test Catalog Service
+  # -------------------------------------------
+
+  test-catalog:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: catalog-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run test
+        run: |
+          npm ci
+          npm test
+
+  # -------------------------------------------
+  # Job 3: Test Orders Service
+  # -------------------------------------------
+
+  test-orders:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: orders-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install dependendies
+        run: |
+          python -m install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run test
+        run: pytest
+
+  # -------------------------------------------
+  # Job 4: Test frontend Service
+  # -------------------------------------------
+  test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Lint Frontend
+        run: npx htmlhint "frontend/index.html"
+      
+    
+    
+  
+          
+        
