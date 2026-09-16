@@ -1,0 +1,124 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # No port published — only reachable by other containers on
+    # docker-app-net, by service name "db".
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - docker-app-net
+
+  auth-service:
+    image: ${ECR_REGISTRY}/auth-repo:${IMAGE_TAG}
+    container_name: auth-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRY_MINUTES: ${JWT_EXPIRY_MINUTES}
+    ports:
+      - "127.0.0.1:8001:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - docker-app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  catalog-service:
+    image: ${ECR_REGISTRY}/catalog-repo:${IMAGE_TAG}
+    container_name: catalog-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    ports:
+      - "127.0.0.1:8002:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - docker-app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  orders-service:
+    image: ${ECR_REGISTRY}/orders-repo:${IMAGE_TAG}
+    container_name: orders-service
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      AUTH_SERVICE_URL: http://auth-service:8000
+      CATALOG_SERVICE_URL: http://catalog-service:4000
+    ports:
+      - "127.0.0.1:8003:8001"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - docker-app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  frontend:
+    image: ${ECR_REGISTRY}/frontend-repo:${IMAGE_TAG} 
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      orders-service:
+        condition: service_healthy
+    networks:
+      - docker-app-net
+
+volumes:
+  db_data:
+
+networks:
+  docker-app-net:
+    driver: bridge
