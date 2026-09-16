@@ -112,12 +112,11 @@ jobs:
             AWS_REGION=${{ secrets.AWS_REGION }}
             ECR_REGISTRY=${ECR_REGISTRY}
             IMAGE_TAG=${{ github.sha }}
-            
             EOF
             chmod 600 .env
 
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-            docker login --username AWS --password-stdin $ECR_REGISTRY
+            docker login --username AWS --password-stdin "$ECR_REGISTRY"
             
             docker compose -f docker-compose.prod.yml pull
 
