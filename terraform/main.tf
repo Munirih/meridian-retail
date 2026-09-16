@@ -17,7 +17,7 @@ data "http" "my_ip" {
 module "securitygroup" {
   source = "./modules/securitygroup"
 
-  name   = "meridian-retail-server-sg"
+  name   = "meridian-retail-server"
   vpc_id = module.network.vpc_id
   ingress_rules = [
     {
