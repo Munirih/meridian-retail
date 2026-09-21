@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source /home/ubuntu/app/.env
+
 BACKUP_DIR="/home/ubuntu/app/backups"
 S3_BUCKET="s3://meridian-retail-postgres-backups"
 DATE=$(date +"%Y-%m-%d")
