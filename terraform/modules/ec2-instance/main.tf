@@ -21,6 +21,14 @@ data "aws_ami" "ubuntu_2604" {
 
 }
 
+resource "aws_eip" "ec2" {
+  domain = "vpc"
+
+  tags = {
+    Name = "${var.ec2_name}-eip"
+  }
+}
+
 # ---------- EC2 INSTANCE ----------
 resource "aws_instance" "ec2" {
   ami                         = data.aws_ami.ubuntu_2604.id
@@ -28,7 +36,7 @@ resource "aws_instance" "ec2" {
   subnet_id                   = var.subnet_id
   vpc_security_group_ids      = [var.security_group_id]
   key_name                    = var.ec2_key_name
-  associate_public_ip_address = true
+
 
   root_block_device {
     volume_size = 20
@@ -40,5 +48,11 @@ resource "aws_instance" "ec2" {
     Name        = var.ec2_name
     Environment = var.environment
   }
+}
+
+# ---------- ELASTIC IP ASSOCIATION ----------
+resource "aws_eip_association" "ec2" {
+  instance_id   = aws_instance.ec2.id
+  allocation_id = aws_eip.ec2.id
 }
 
