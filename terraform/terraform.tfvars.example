@@ -1,1 +1,35 @@
+
+vpc_name             = "your_vpc_name"
+vpc_cidr             = "your cidr ip"
+public_subnet_cidrs  = ["ip range", "ip range"]
+private_subnet_cidrs = ["ip range", "ip range"]
+availability_zones   = ["availability_zone", "availability_zone"]
+environment          = "dev"
+
+
+sg_name = "security group name"
+
+egress_rules = [
+  {
+    description = "Allow all outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+]
+
+frontend_ecr_name    = "repo name"
+orders_ecr_name      = "repo name"
+catalog_ecr_name     = "repo name"
+auth_ecr_name        = "repo name"
+image_tag_mutability = "IMMUTABLE or MUTABLE"
+scan_on_push         = true or false
+
+iam_role         = "iam role name"
+instance_profile = "instance profile name"
+
+ec2_name          = "server name"
+ec2_instance_type = "type"
 ec2_key_name       = "your_ssh_key_name"
+bucket_name = "s3 bucket name"

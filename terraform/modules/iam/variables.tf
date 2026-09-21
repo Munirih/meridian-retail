@@ -8,3 +8,7 @@ variable "instance_profile" {
   type        = string
 }
 
+variable "postgres_backup_bucket_arn" {
+  description = "ARN of the S3 bucket used for PostgreSQL backups"
+  type        = string
+}
