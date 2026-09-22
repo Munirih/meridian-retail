@@ -1,4 +1,10 @@
 name: Provision EC2 (one-time / rebuild only)
+
+# Manual trigger only — This runs when setting up a brand new instance, or if you ever rebuild one from scratch. 
+# Safe to re-run against an already-provisioned instance
+# (server_setup.sh's installs are idempotent, and the nginx/certbot
+# steps below are also idempotent now — ln -sf, rm -f, and certbot
+# reusing an existing valid cert rather than erroring).
 on:
   workflow_dispatch: {}
 
@@ -123,6 +129,19 @@ jobs:
             sudo certbot renew --dry-run
         env:
           DOMAIN: ${{ secrets.DOMAIN }}
+
+      - name: Configure cron
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.EC2_INSTANCE }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            echo "Setting up PostgreSQL backup cron job..."
+            (crontab -l 2>/dev/null | grep -v "backup_db.sh"; echo "0 0 * * * /home/${{ secrets.EC2_USERNAME}}/app/scripts/backup_db.sh >> /home/${{ secrets.EC2_USERNAME}}/app/backup.log 2>&1") | crontab -
+            echo "PostgreSQL backup cron job configured."
+
 
       - name: Remove GitHub runner SSH access
         if: always()
