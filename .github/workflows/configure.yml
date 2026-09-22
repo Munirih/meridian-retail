@@ -1,10 +1,5 @@
 name: Provision EC2 (one-time / rebuild only)
 
-# Manual trigger only — This runs when setting up a brand new instance, or if you ever rebuild one from scratch. 
-# Safe to re-run against an already-provisioned instance
-# (server_setup.sh's installs are idempotent, and the nginx/certbot
-# steps below are also idempotent now — ln -sf, rm -f, and certbot
-# reusing an existing valid cert rather than erroring).
 on:
   workflow_dispatch: {}
 
