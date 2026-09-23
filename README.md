@@ -1,141 +1,90 @@
 # Meridian Retail Group — Reverse Proxy, Domains, TLS & Multi-Service Foundations
 
-This repository contains the pre-built Meridian Retail Group application
-(three backend services, a frontend, and a Postgres database) used in the
-DevOps Foundations internship project.
+Meridian Retail Group's e-commerce storefront: a multi-service application running on Docker Compose on a single EC2 instance, provisioned with Terraform and deployed via GitHub Actions.
 
-## What's already built (do not modify)
 
-- `auth-service/main.py` — FastAPI signup/login/JWT service
-- `catalog-service/app.js` — Express + Postgres product catalog service
-- `orders-service/main.py` — FastAPI orders service (calls auth-service + catalog-service)
-- `frontend/index.html` — static storefront (calls relative `/api/*` paths)
-- `requirements.txt` / `package.json` — dependencies for each service
+## Architecture
 
-## What you need to build
+- Compute — a single EC2 instance running the full application stack via Docker Compose.
+- Services — auth-service, catalog-service, orders-service, and frontend, each built as its own Docker image and a PostgreSQL Database, running as a container, backed up daily to Amazon S3 bucket.
+- Reverse proxy — nginx, configured to route root traffic (/) to the frontend and /api/* paths to the correct backend service. It also terminates TLS, so HTTPS is handled at the proxy rather than in application code.
+- TLS — certificates issued and auto-renewed via Certbot, serving the storefront over a secure DuckDNS domain with automatic HTTP → HTTPS redirects. DuckDNS is used for testing purposes.
+- Networking & access — a custom VPC, subnets, and security groups, provisioned via Terraform (terraform/modules/network, terraform/modules/securitygroup), with SSH restricted to a strict IP whitelist. CI/CD workflows open that whitelist only for the duration of a run.
+- Image registry — Amazon ECR (terraform/modules/ecr), with immutable tags: once an image is pushed under a tag, that tag can never be overwritten, so what's running in production is always traceable to an exact build.
+- Compute provisioning — the EC2 instance and its IAM instance profile are defined in terraform/modules/ec2-instance and terraform/modules/iam.
+- Backups storage — an S3 bucket (terraform/modules/s3_bucket) holds daily database backups.
+- Remote Terraform State Management with state locking (S3 Bucket)
 
-The following files exist but are **empty** — you're building these from
-scratch, with no starter code or hints:
 
-- `auth-service/Dockerfile`
-- `catalog-service/Dockerfile`
-- `orders-service/Dockerfile`
-- `frontend/Dockerfile`
-- `docker-compose.yml` — wire all four services + Postgres together
-- `scripts/server_setup.sh` — bootstrap a fresh EC2 instance (Docker, Nginx, Certbot)
-- `nginx/meridian-http.conf` — your hand-written reverse proxy config
-- `nginx/meridian-https-reference.conf` — filled in after running Certbot
-- `scripts/backup_db.sh` — automated daily Postgres backup
-- `scripts/restore_db.sh` — restore from a backup and prove it works
-- `.github/workflows/ci.yml` — build + test on every push
-- `.github/workflows/deploy.yml` — build, push to ECR, deploy on push to main
-- `docs/routing-explained.md` — written explanation of your Nginx config
-- `docs/backup-strategy.md` — written explanation of your backup approach
-
-See the full project brief (provided separately) for the two-week schedule,
-all ten deliverables (D1–D10), and the pre/post-assessment questions.
-
-## Getting started locally
-
-```bash
-cp .env.example .env
-# edit .env with real values (DB password, JWT secret, etc.)
-
-# You'll need to write docker-compose.yml and each service's Dockerfile
-# before this works:
-docker compose up -d --build
-docker compose ps          # all five containers should be Up
-curl http://localhost:8080 # should return the storefront HTML
-```
-
-## Service ports (local/dev)
-
-| Service          | Container Port | Host Port (127.0.0.1 only) |
-|------------------|-----------------|------------------------------|
-| auth-service     | 8000            | 8001                         |
-| catalog-service  | 4000            | 8002                         |
-| orders-service   | 8001            | 8003                         |
-| frontend         | 80              | 8080 (public, temporary)     |
-| postgres         | 5432            | 5432                         |
-
-Once your reverse proxy is in place, the frontend's public port exposure
-should be reconsidered — customers should reach everything through your
-domain and Nginx, not a raw `:8080`.
-
-## New Concepts Reference Table
-
-| Concept | Description | Status |
-|---|---|---|
-| Terraform & VPC | Automating custom network isolation, subnets, and server provisioning via code. | New to this project |
-| IAM Instance Profile | Securely attaching scoped permissions directly to a server instead of using keys. | New to this project |
-| Immutable ECR | Secure container registries that prevent overwriting existing image tags. | New to this project |
-| Dynamic Security Groups | Modifying AWS firewall rules through CI/CD to whitelist runner IPs. | New to this project |
-| Reverse Proxy | A server that sits in front of backend services and forwards client requests. | New to this project |
-| `proxy_pass` directive | The Nginx directive that forwards a matched request to a backend address. | New to this project |
-| DNS A record | A DNS record that maps a domain name to an IPv4 address. | New to this project |
-| TLS / HTTPS (Certbot) | Encrypting traffic between the browser and the server. | New to this project |
-| Docker Compose networking | Containers reaching each other by service name internally. | Existing knowledge |
-
-## What You Will Build
-
-The project has ten deliverables. Each deliverable has a specific,
-observable verification. D9, the tested restore, and D10, the automated
-deployment, most clearly distinguish this project from a tutorial because
-both require proving that the system works end to end securely.
-
-| Ref | Deliverable | Verification |
-|---|---|---|
-| D1 | Custom VPC and EC2 provisioned via Terraform | `terraform output` shows the VPC ID and EC2 public IP. The server runs Ubuntu 22.04. |
-| D2 | Security group IP whitelisting | AWS Console confirms that port 22 is restricted exclusively to the intern's specific IP address. |
-| D3 | Immutable ECR repositories | AWS Console shows ECR repositories for auth, catalog, orders, and frontend with mutability set to `IMMUTABLE`. |
-| D4 | Least-privilege IAM role | `terraform state list` shows an `aws_iam_role` attached to the EC2 instance, allowing read-only access to ECR. |
-| D5 | DuckDNS routing active | `dig yourdomain.duckdns.org +short` resolves exactly to the EC2 instance's public IP. |
-| D6 | Manual Nginx routing correctly configured | `curl http://yourdomain.duckdns.org/api/auth/healthz` returns `200 OK` from the auth container. |
-| D7 | HTTPS active and redirecting | `curl -I https://yourdomain.duckdns.org` returns HTTP 200 without a certificate warning. The browser padlock is confirmed. |
-| D8 | Database deployed and secured | PostgreSQL runs in Docker Compose, its port is bound to `127.0.0.1` on the host, and it is seeded with sample data. |
-| D9 | Backup restore tested | Drop a test row, restore from the backup using `scripts/restore_db.sh`, and confirm that the row reappears. |
-| D10 | CI/CD pipeline automation | Pushing to `main` triggers GitHub Actions to build images, push them to ECR, dynamically update the EC2 security group for the runner IP, connect through SSH, and run `docker compose up -d`. |
-
-## Repository and File Structure
-
-The repository contains the full pre-built application as well as the
-infrastructure work: Terraform configuration, Nginx configuration, backup
-scripts, and CI/CD workflows.
+## project Structure
 
 ```text
 meridian-retail/
-├── terraform/
-│   ├── main.tf              # VPC, EC2, IAM, and ECR infrastructure
-│   ├── variables.tf         # Region, personal IP, and other variables
-│   └── outputs.tf            # EC2 public IP and VPC IDs
-├── auth-service/
-│   ├── main.py              # Signup, login, and JWT issuance
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── tests/test_auth.py
-├── catalog-service/
-│   ├── app.js               # Express + Postgres product listings
-│   ├── package.json
-│   └── Dockerfile
-├── orders-service/
-│   ├── main.py              # Calls auth-service and catalog-service
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/
-│   ├── index.html           # Storefront UI; calls /api/* on the same domain
-│   └── Dockerfile
-├── nginx/
-│   ├── meridian-http.conf   # Phase 1: hand-written HTTP routing config
-│   └── meridian-https-reference.conf # Phase 2: Certbot-generated reference
-├── scripts/
-│   ├── backup_db.sh         # Create PostgreSQL backups
-│   ├── restore_db.sh        # Restore PostgreSQL backups
-│   ├── server_setup.sh      # Bootstrap Docker, Nginx, and Certbot
-│   └── ...
 ├── .github/workflows/
-│   ├── ci.yml               # Build and test on every push
-│   └── deploy.yml           # Build, publish, and deploy to EC2
-├── docker-compose.yml
+│   ├── configure.yml         # One-time / rebuild-only server 
+│   └── deploy.yml            # CI/CD: build, push, deploy on every
+├── auth-service/
+├── catalog-service/
+├── orders-service/
+├── frontend/
+├── docs/
+│   ├── backup-strategy.md
+│   └── routing-explained.md
+├── images/
+├── nginx/
+│   └── meridian-http.conf    # Reverse proxy routing rules
+├── scripts/
+│   ├── server_setup.sh       # Installs Docker and core tooling on the server
+│   ├── backup_db.sh          # Nightly Postgres backup to S3 (run via cron)
+│   └── restore.sh            # Restores a given day's backup from S3
+├── terraform/
+│   ├── modules/
+│   │   ├── ec2-instance/
+│   │   ├── ecr/
+│   │   ├── iam/
+│   │   ├── network/
+│   │   ├── s3_bucket/
+│   │   └── securitygroup/
+│   ├── backend.tf
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── providers.tf
+│   ├── variables.tf
+│   ├── terraform.tfvars       # gitignored — actual values
+│   └── terraform.tfvars.example
+├── docker-compose.prod.yml   # Production service definitions
+├── docker-compose.yml        # Local development
+├── .env.example 
+├── .gitignore                    # gitignored — actual values
 └── README.md
 ```
+## CI/CD Pipeline
 
+ (.github/workflows/configure.yml) is manual-trigger only (workflow_dispatch) It:
+
+1. Locates the EC2 instance by tag and opens temporary SSH access for the GitHub runner's IP only.
+2. Copies scripts/ and nginx/ to the server and runs server_setup.sh.
+3. Installs the nginx config and reloads nginx.
+4. Requests/renews the TLS certificate via Certbot.
+5. Schedules the nightly backup cron job (backup_db.sh, daily at midnight UTC).
+6. Revokes the GitHub runner's SSH access again.
+
+
+(.github/workflows/deploy.yml) runs on every relevant push and:
+
+1. Builds and pushes each service's Docker image to its ECR repository, tagged with the commit SHA (github.sha), so every deployed image is traceable to an exact commit. ECR tag immutability prevents that tag from ever being silently overwritten.
+2. Opens temporary SSH access to the EC2 instance for the GitHub runner's IP, same pattern as provisioning.
+3. Writes a fresh .env on the server from GitHub Secrets (DB credentials, JWT secret, domain, etc.) — no secrets are stored in the repo.
+4. Pulls and redeploys via docker compose -f docker-compose.prod.yml pull && up -d --remove-orphans.
+5. Revokes SSH access again once the deploy completes.
+
+
+
+## Local development
+
+```bash
+cp .env.example .env   # fill in local values
+docker compose up -d
+```
+
+Local docker compose builds images from source and exposes service ports directly for convenience. This differs from production, which pulls pre-built images from ECR, exposes only nginx, and injects secrets fresh at deploy time rather than from a hand-edited .env.
