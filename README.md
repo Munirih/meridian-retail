@@ -88,3 +88,20 @@ docker compose up -d
 ```
 
 Local docker compose builds images from source and exposes service ports directly for convenience. This differs from production, which pulls pre-built images from ECR, exposes only nginx, and injects secrets fresh at deploy time rather than from a hand-edited .env.
+
+## Database backups
+
+Backup (scripts/backup_db.sh) — runs daily via cron. Dumps the postgres-db container's database with pg_dump, compresses it, uploads it to an S3 bucket.
+Restore (scripts/restore.sh) — run manually, on demand:
+
+```bash
+  ./scripts/restore.sh 2026-09-20
+```
+Downloads that date's backup from S3 and replays it into the database via psql. 
+
+## Security notes
+
+- SSH access has no standing allowlist entry for CI — it's opened and revoked within a single workflow run.
+- Application ports are not exposed publicly; nginx is the only entry point.
+- IAM roles are scoped to least privilege for the actions each workflow actually performs.
+- ECR repositories use immutable tags to prevent silent image overwrites.
