@@ -82,10 +82,7 @@ meridian-retail/
 
 ## Local development
 
-```bash
-cp .env.example .env   # fill in local values
-docker compose up -d
-```
+Access the documentation to run the app localy [here](documentation.md)
 
 Local docker compose builds images from source and exposes service ports directly for convenience. This differs from production, which pulls pre-built images from ECR, exposes only nginx, and injects secrets fresh at deploy time rather than from a hand-edited .env.
 
