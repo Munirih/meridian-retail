@@ -58,6 +58,11 @@ meridian-retail/
 ├── .gitignore                    # gitignored — actual values
 └── README.md
 ```
+## Live app 
+
+![App Running Live](image-2.png)
+
+
 ## CI/CD Pipeline
 
  (.github/workflows/configure.yml) is manual-trigger only (workflow_dispatch) It:
