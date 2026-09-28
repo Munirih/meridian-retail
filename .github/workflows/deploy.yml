@@ -1,8 +1,10 @@
 name: CI/CD Workflow
 
 on:
-  workflow_dispatch: {}
-
+  workflow_run:
+    workflows: ["Provision EC2 (one-time / rebuild only)"]
+    types: [completed]
+    branches: [ main ]
 
 jobs:
   # -------------------------------------------
@@ -10,6 +12,7 @@ jobs:
   # -------------------------------------------
   build-and-push:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       matrix:
         include:
