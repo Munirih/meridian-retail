@@ -35,7 +35,7 @@ meridian-retail/
 │   └── meridian-http.conf    # Reverse proxy routing rules
 ├── scripts/
 │   ├── server_setup.sh       # Installs Docker and core tooling on the server
-│   ├── backup_db.sh          # Nightly Postgres backup to S3 (run via cron)
+│   ├── backup_db.sh          # Daily Postgres backup to S3 (run via cron)
 │   └── restore.sh            # Restores a given day's backup from S3
 ├── terraform/
 │   ├── modules/
