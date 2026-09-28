@@ -52,10 +52,11 @@ meridian-retail/
 │   ├── variables.tf
 │   ├── terraform.tfvars       # gitignored — actual values
 │   └── terraform.tfvars.example
-├── docker-compose.prod.yml   # Production service definitions
-├── docker-compose.yml        # Local development
+├── docker-compose.prod.yml    # Production service definitions
+├── docker-compose.yml         # Local development
 ├── .env.example 
-├── .gitignore                    # gitignored — actual values
+├── .env                       # gitignored — actual values
+├── .gitignore                    
 └── README.md
 ```
 ## Live app 
