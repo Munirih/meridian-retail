@@ -1,7 +1,8 @@
-name: Provision EC2 (one-time / rebuild only)
+name: Configure EC2
 
 on:
-  workflow_dispatch: {}
+  push: 
+    branches: [ main ]
 
 jobs:
   provision:
