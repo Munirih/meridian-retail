@@ -2,7 +2,7 @@ name: CI/CD Workflow
 
 on:
   workflow_run:
-    workflows: ["Provision EC2 (one-time / rebuild only)"]
+    workflows: ["Configure EC2"]
     types: [completed]
     branches: [ main ]
 
@@ -173,7 +173,7 @@ jobs:
           secure: true
           username: ${{secrets.EMAIL_USERNAME}}
           password: ${{secrets.EMAIL_APP_PASSWORD}}
-          subject: Deployment Notification - Techflow App CI/CD
+          subject: Deployment Notification - Meridian Retail App CI/CD
           to: ${{ secrets.RECIPIENT_EMAIL }}
           from: ${{ secrets.EMAIL_USERNAME }}
           body: |
