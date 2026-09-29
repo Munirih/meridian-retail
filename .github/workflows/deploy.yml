@@ -164,3 +164,26 @@ jobs:
           --port 22 \
           --cidr ${{ steps.runner-ip.outputs.ip }}/32
 
+      - name: Send confirmation mail
+        if: always() 
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{secrets.EMAIL_USERNAME}}
+          password: ${{secrets.EMAIL_APP_PASSWORD}}
+          subject: Deployment Notification - Techflow App CI/CD
+          to: ${{ secrets.RECIPIENT_EMAIL }}
+          from: ${{ secrets.EMAIL_USERNAME }}
+          body: |
+            Deployment Summary
+
+            Status: ${{ job.status == 'success' && '✅ Deployment Succeeded' || '❌ Deployment Failed'}}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            Branch: ${{ github.ref_name }}
+
+            Your app is live at: https://${{ secrets.DOMAIN }}
+
+            View Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
