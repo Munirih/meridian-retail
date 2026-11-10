@@ -2,6 +2,9 @@
 
 Meridian Retail Group's e-commerce storefront: a multi-service application running on Docker Compose on a single EC2 instance, provisioned with Terraform and deployed via GitHub Actions.
 
+## Architectural Diagram
+
+![Diagram]()
 
 ## Architecture
 
